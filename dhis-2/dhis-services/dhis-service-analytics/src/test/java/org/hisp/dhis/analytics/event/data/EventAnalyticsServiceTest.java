@@ -230,12 +230,12 @@ public class EventAnalyticsServiceTest
     {
         for ( Map.Entry<String, EventQueryParams> entry : eventQueryParams.entrySet() )
         {
-            String key = entry.getKey();
+            String scenario = entry.getKey();
             EventQueryParams params = entry.getValue();
 
             Grid aggregatedDataValueGrid = eventAnalyticsService.getAggregatedEventData( params );
 
-            AnalyticsTestUtils.assertResultGrid( aggregatedDataValueGrid, results.get( key ) );
+            AnalyticsTestUtils.assertResultGrid( scenario, aggregatedDataValueGrid, results.get( scenario ) );
         }
     }
 
