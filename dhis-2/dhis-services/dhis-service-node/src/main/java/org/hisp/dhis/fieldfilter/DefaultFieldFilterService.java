@@ -437,10 +437,7 @@ public class DefaultFieldFilterService implements FieldFilterService
 
             if ( property == null || !property.isReadable() )
             {
-                // throw new FieldFilterException( fieldKey, schema );
-                log.debug( "Unknown field property `" + fieldKey + "`, available fields are "
-                    + schema.getPropertyMap().keySet() );
-                continue;
+                throw new FieldFilterException( fieldKey, schema );
             }
 
             Object returnValue = ReflectionUtils.invokeMethod( object, property.getGetterMethod() );
