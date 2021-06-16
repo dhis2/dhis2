@@ -28,13 +28,13 @@ package org.hisp.dhis.metadata.users;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import org.hisp.dhis.ApiTest;
+import org.hisp.dhis.ConcurrentApiTest;
 import org.hisp.dhis.actions.LoginActions;
 import org.hisp.dhis.actions.UserActions;
 import org.hisp.dhis.actions.metadata.MetadataPaginationActions;
 import org.hisp.dhis.dto.ApiResponse;
 import org.hisp.dhis.utils.DataGenerator;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -47,7 +47,7 @@ import static org.hisp.dhis.actions.metadata.MetadataPaginationActions.DEFAULT_M
  * @author Viet Nguyen <viet@dhis2.org>
  */
 public class UserPaginationTest
-    extends ApiTest
+    extends ConcurrentApiTest
 {
     private MetadataPaginationActions paginationActions;
 
@@ -59,7 +59,7 @@ public class UserPaginationTest
 
     private int total = 50;
 
-    @BeforeEach
+    @BeforeAll
     public void setUp()
     {
         LoginActions loginActions = new LoginActions();

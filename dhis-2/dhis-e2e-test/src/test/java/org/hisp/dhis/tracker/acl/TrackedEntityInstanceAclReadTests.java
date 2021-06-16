@@ -6,7 +6,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.apache.commons.collections.ListUtils;
 import org.hamcrest.Matchers;
-import org.hisp.dhis.ApiTest;
 import org.hisp.dhis.actions.LoginActions;
 import org.hisp.dhis.actions.RestApiActions;
 import org.hisp.dhis.actions.UserActions;
@@ -18,6 +17,7 @@ import org.hisp.dhis.dto.OrgUnit;
 import org.hisp.dhis.dto.UserGroup;
 import org.hisp.dhis.helpers.QueryParamsBuilder;
 import org.hisp.dhis.helpers.models.User;
+import org.hisp.dhis.tracker.TrackerApiTest;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -35,17 +35,17 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Stian Sandvold
  */
 public class TrackedEntityInstanceAclReadTests
-    extends ApiTest
+    extends TrackerApiTest
 {
     private static final String _DATAREAD = "..r.*";
+
+    private static final List<User> users = new ArrayList<>();
 
     private MetadataActions metadataActions;
 
     private UserActions userActions;
 
     private TEIActions teiActions;
-
-    private static final List<User> users = new ArrayList<>();
 
     @BeforeAll
     public void before()
@@ -56,7 +56,7 @@ public class TrackedEntityInstanceAclReadTests
         userActions = new UserActions();
 
         // Setup as SuperUser
-        new LoginActions().loginAsDefaultUser();
+        loginActions.loginAsDefaultUser();
 
         // Set up metadata (Import twice to connect all references)
         metadataActions.importAndValidateMetadata( new File( "src/test/resources/tracker/acl/metadata.json" ) );

@@ -26,7 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.hisp.dhis.actions.metadata;
+package org.hisp.dhis.metadata;
 
 import com.google.gson.JsonObject;
 import org.hisp.dhis.actions.RestApiActions;
@@ -36,34 +36,49 @@ import org.hisp.dhis.utils.DataGenerator;
 /**
  * @author Gintare Vilkelyte <vilkelyte.gintare@gmail.com>
  */
-public class AttributeActions
+public class RelationshipTypeActions
     extends RestApiActions
 {
-    public AttributeActions()
+    public RelationshipTypeActions()
     {
-        super( "/attributes" );
+        super( "/relationshipTypes" );
     }
 
-    public String createUniqueAttribute( String valueType, String... metadataObjects )
+    public String create( String fromRelationshipEntity, String fromRelationshipEntityId, String toRelationshipEntity,
+        String toRelationshipEntityId )
     {
-        return createAttribute( valueType, true, metadataObjects );
-    }
-
-    public String createAttribute( String valueType, boolean unique, String... metadataObjects )
-    {
-        JsonObject ob = new JsonObjectBuilder()
-            .addProperty( "name", String.format( "TA attribute %s", DataGenerator.randomString() ) )
-            .addProperty( "unique", String.valueOf( unique ) )
-            .addProperty( "valueType", valueType )
-            .addUserGroupAccess()
+        JsonObject obj = JsonObjectBuilder.jsonObject()
+            .addProperty( "name", "TA relationship type" + DataGenerator.randomString() )
+            .addProperty( "fromToName", "TA FROM NAME" )
+            .addProperty( "toFromName", "TA TO NAME" )
+            .addObject( "fromConstraint",
+                JsonObjectBuilder.jsonObject( getRelationshipTypeConstraint( fromRelationshipEntity, fromRelationshipEntityId ) ) )
+            .addObject( "toConstraint",
+                JsonObjectBuilder.jsonObject( getRelationshipTypeConstraint( toRelationshipEntity, toRelationshipEntityId ) ) )
             .build();
 
-        for ( String metadataObject : metadataObjects
-        )
-        {
-            ob.addProperty( metadataObject + "Attribute", "true" );
+        return this.create( obj );
+    }
 
+    private JsonObject getRelationshipTypeConstraint( String relationshipEntity, String id )
+    {
+        JsonObject obj = new JsonObject();
+        obj.addProperty( "relationshipEntity", relationshipEntity );
+        switch ( relationshipEntity )
+        {
+        case "TRACKED_ENTITY_INSTANCE":
+            return new JsonObjectBuilder( obj )
+                .addObject( "trackedEntityType", new JsonObjectBuilder().addProperty( "id", id ) )
+                .build();
+
+        case "PROGRAM_STAGE_INSTANCE":
+        {
+            return new JsonObjectBuilder( obj )
+                .addObject( "program", new JsonObjectBuilder().addProperty( "id", id ) )
+                .build();
         }
-        return this.create( ob );
+        }
+
+        return new JsonObject();
     }
 }

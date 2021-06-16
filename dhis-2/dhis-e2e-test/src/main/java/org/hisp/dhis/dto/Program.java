@@ -1,5 +1,3 @@
-package org.hisp.dhis.helpers;
-
 /*
  * Copyright (c) 2004-2021, University of Oslo
  * All rights reserved.
@@ -28,84 +26,47 @@ package org.hisp.dhis.helpers;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import org.apache.commons.lang3.tuple.MutablePair;
+package org.hisp.dhis.dto;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
  * @author Gintare Vilkelyte <vilkelyte.gintare@gmail.com>
  */
-public class QueryParamsBuilder
+public class Program
 {
-    List<MutablePair<String, String>> queryParams;
+    private List<String> stages;
 
-    public QueryParamsBuilder()
+    private String id;
+
+    public Program( String id )
     {
-        queryParams = new ArrayList<>();
+        this.id = id;
     }
 
-    /**
-     * Adds or updates the query param.
-     * Format: key=value
-     *
-     * @param param
-     * @return
-     */
-    public QueryParamsBuilder add( String param )
+    public Program( String id, List<String> stages )
     {
-        String[] split = param.split( "=" );
-        MutablePair pair = getByKey( split[0] );
-
-        if ( pair != null && !pair.getKey().equals( "filter" ) )
-        {
-            pair.setRight( split[1] );
-            return this;
-        }
-
-        queryParams.add( MutablePair.of( split[0], split[1] ) );
-
-        return this;
+        this.id = id;
+        this.stages = stages;
     }
 
-    public QueryParamsBuilder addAll( String... params )
+    public List<String> getStages()
     {
-        for ( String param : params )
-        {
-            this.add( param );
-        }
-
-        return this;
+        return stages;
     }
 
-    private MutablePair getByKey( String key )
+    public void setStages( List<String> stages )
     {
-        return queryParams.stream()
-            .filter( p -> p.getLeft().equals( key ) )
-            .findFirst()
-            .orElse( null );
+        this.stages = stages;
     }
 
-    public String build()
+    public String getId()
     {
-        if ( queryParams.size() == 0 )
-        {
-            return "";
-        }
+        return id;
+    }
 
-        StringBuilder builder = new StringBuilder();
-        builder.append( "?" );
-
-        for ( int i = 0; i < queryParams.size(); i++ )
-        {
-            builder.append( String.format( "%s=%s", queryParams.get( i ).getLeft(), queryParams.get( i ).getRight() ) );
-
-            if ( i != queryParams.size() - 1 )
-            {
-                builder.append( "&" );
-            }
-        }
-
-        return builder.toString();
+    public void setId( String id )
+    {
+        this.id = id;
     }
 }

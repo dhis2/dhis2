@@ -62,37 +62,41 @@ public class MetadataSetupExtension
     @Override
     public void beforeAll( ExtensionContext context )
     {
-        if ( !started )
+        synchronized ( MetadataSetupExtension.class )
         {
-            started = true;
-            logger.info( "Importing metadata for tests" );
-
-            // The following line registers a callback hook when the root test context is shut down
-            context.getRoot().getStore( GLOBAL ).put( "MetadataSetupExtension", this );
-
-            MetadataActions metadataActions = new MetadataActions();
-
-            new LoginActions().loginAsDefaultUser();
-
-            String[] files = {
-                "src/test/resources/setup/userGroups.json",
-                "src/test/resources/setup/metadata.json",
-                "src/test/resources/setup/userRoles.json",
-                "src/test/resources/setup/users.json"
-            };
-
-            String queryParams = "async=false";
-            for ( String fileName : files )
+            if ( !started )
             {
-                metadataActions.importAndValidateMetadata( new File( fileName ), queryParams );
+                started = true;
+                logger.info( "Importing metadata for tests" );
+
+                // The following line registers a callback hook when the root test context is shut down
+                context.getRoot().getStore( GLOBAL ).put( "MetadataSetupExtension", this );
+
+                MetadataActions metadataActions = new MetadataActions();
+
+                new LoginActions().loginAsDefaultUser();
+
+                String[] files = {
+                    "src/test/resources/setup/userGroups.json",
+                    "src/test/resources/setup/metadata.json",
+                    "src/test/resources/setup/userRoles.json",
+                    "src/test/resources/setup/users.json"
+                };
+
+                String queryParams = "async=false";
+                for ( String fileName : files )
+                {
+                    metadataActions.importAndValidateMetadata( new File( fileName ), queryParams );
+                }
+
+                setupUsers();
+
+                createdData.putAll( TestRunStorage.getCreatedEntities() );
+                TestRunStorage.removeAllEntities();
+
             }
-
-            setupUsers();
-
-            createdData.putAll( TestRunStorage.getCreatedEntities() );
-            TestRunStorage.removeAllEntities();
-
         }
+
     }
 
     private void setupUsers()
@@ -138,8 +142,10 @@ public class MetadataSetupExtension
     {
         if ( TestConfiguration.get().shouldCleanUp() )
         {
+            new LoginActions().loginAsDefaultUser();
             TestCleanUp testCleanUp = new TestCleanUp();
 
+            testCleanUp.deleteCreatedEntities();
             iterateCreatedData( id -> {
                 testCleanUp.deleteEntity( createdData.get( id ), id );
             } );

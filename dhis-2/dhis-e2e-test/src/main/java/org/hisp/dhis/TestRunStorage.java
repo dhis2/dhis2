@@ -28,11 +28,15 @@ package org.hisp.dhis;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+import io.restassured.authentication.AuthenticationScheme;
+import org.hisp.dhis.helpers.config.TestConfiguration;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.restassured.RestAssured.preemptive;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -41,6 +45,26 @@ import static java.util.stream.Collectors.toList;
 public class TestRunStorage
 {
     private static LinkedHashMap<String, String> createdEntities;
+
+    private static ThreadLocal<AuthenticationScheme> authenticationScheme = new ThreadLocal<AuthenticationScheme>()
+    {
+        @Override
+        protected AuthenticationScheme initialValue()
+        {
+            return preemptive()
+                .basic( TestConfiguration.get().defaultUserUsername(), TestConfiguration.get().defaultUSerPassword() );
+        }
+    };
+
+    public static AuthenticationScheme getAuthenticationScheme()
+    {
+        return authenticationScheme.get();
+    }
+
+    public static void setAuthenticationScheme( AuthenticationScheme scheme )
+    {
+        authenticationScheme.set( scheme );
+    }
 
     public static void addCreatedEntity( final String resource, final String id )
     {

@@ -29,25 +29,25 @@ package org.hisp.dhis.metadata;
  */
 
 import com.google.gson.JsonObject;
-
-import java.util.stream.Stream;
-
-import org.hisp.dhis.ApiTest;
+import org.hisp.dhis.ConcurrentApiTest;
 import org.hisp.dhis.actions.LoginActions;
 import org.hisp.dhis.actions.RestApiActions;
 import org.hisp.dhis.dto.ApiResponse;
+import org.hisp.dhis.helpers.JsonObjectBuilder;
 import org.hisp.dhis.helpers.ResponseValidationHelper;
 import org.hisp.dhis.utils.DataGenerator;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import java.util.stream.Stream;
 
 /**
  * @author Gintare Vilkelyte <vilkelyte.gintare@gmail.com>
  */
 public class DataElementsTest
-    extends ApiTest
+    extends ConcurrentApiTest
 {
     private RestApiActions dataElementActions;
 
@@ -64,8 +64,8 @@ public class DataElementsTest
         } );
     }
 
-    @BeforeAll
-    public void beforeAll()
+    @BeforeEach
+    public void beforeEach()
     {
         dataElementActions = new RestApiActions( "/dataElements" );
         categoryComboActions = new RestApiActions( "/categoryCombos" );
@@ -80,10 +80,11 @@ public class DataElementsTest
         String categoryComboDimensionType )
     {
         // arrange
-        JsonObject body = generateBaseBody();
-        body.addProperty( "domainType", domainType );
-        body.addProperty( "valueType", valueType );
-        body.addProperty( "aggregationType", aggregationType );
+        JsonObject body = JsonObjectBuilder.jsonObject( generateBaseBody() )
+            .addProperty( "domainType", domainType )
+            .addProperty( "valueType", valueType )
+            .addProperty( "aggregationType", aggregationType )
+            .build();
 
         if ( withCategoryCombo )
         {
@@ -97,25 +98,24 @@ public class DataElementsTest
 
         // act
         ApiResponse response = dataElementActions.post( body );
-
         // assert
         ResponseValidationHelper.validateObjectCreation( response );
     }
 
     private JsonObject generateBaseBody()
     {
-        JsonObject object = new JsonObject();
-        object.addProperty( "name", DataGenerator.randomEntityName() );
-        object.addProperty( "shortName", DataGenerator.randomEntityName() );
-
-        return object;
+        return new JsonObjectBuilder()
+            .addProperty( "name", DataGenerator.randomEntityName() )
+            .addProperty( "shortName", DataGenerator.randomEntityName() )
+            .build();
     }
 
     public String createCategoryCombo( String dimensionType )
     {
-        JsonObject body = new JsonObject();
-        body.addProperty( "name", DataGenerator.randomEntityName() );
-        body.addProperty( "dataDimensionType", dimensionType );
+        JsonObject body = new JsonObjectBuilder()
+            .addProperty( "name", DataGenerator.randomEntityName() )
+            .addProperty( "dataDimensionType", dimensionType )
+            .build();
 
         return categoryComboActions.create( body );
     }

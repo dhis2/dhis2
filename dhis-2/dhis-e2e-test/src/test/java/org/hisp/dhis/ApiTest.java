@@ -29,10 +29,9 @@ package org.hisp.dhis;
  */
 
 import org.hisp.dhis.actions.LoginActions;
-import org.hisp.dhis.helpers.TestCleanUp;
 import org.hisp.dhis.helpers.extensions.ConfigurationExtension;
 import org.hisp.dhis.helpers.extensions.MetadataSetupExtension;
-import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -44,10 +43,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @ExtendWith( MetadataSetupExtension.class )
 public abstract class ApiTest
 {
-    @AfterAll
-    public void afterAll()
+    protected LoginActions loginActions;
+
+    @BeforeAll
+    public void beforeApiTest()
     {
-        new LoginActions().loginAsDefaultUser();
-        new TestCleanUp().deleteCreatedEntities();
+        loginActions = new LoginActions();
     }
+
 }

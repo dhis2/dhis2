@@ -1,5 +1,3 @@
-package org.hisp.dhis.helpers;
-
 /*
  * Copyright (c) 2004-2021, University of Oslo
  * All rights reserved.
@@ -28,84 +26,59 @@ package org.hisp.dhis.helpers;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import org.apache.commons.lang3.tuple.MutablePair;
+package org.hisp.dhis.helpers.matchers;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.google.gson.JsonObject;
+import org.hamcrest.Description;
+import org.hamcrest.TypeSafeDiagnosingMatcher;
+import org.hisp.dhis.helpers.JsonParserUtils;
 
 /**
  * @author Gintare Vilkelyte <vilkelyte.gintare@gmail.com>
  */
-public class QueryParamsBuilder
+public class HasPropertyEqualTo
+    extends TypeSafeDiagnosingMatcher<Object>
 {
-    List<MutablePair<String, String>> queryParams;
+    private String propertyName;
 
-    public QueryParamsBuilder()
+    private String expected;
+
+    public HasPropertyEqualTo( String propertyName, String expected )
     {
-        queryParams = new ArrayList<>();
+        this.propertyName = propertyName;
+        this.expected = expected;
     }
 
-    /**
-     * Adds or updates the query param.
-     * Format: key=value
-     *
-     * @param param
-     * @return
-     */
-    public QueryParamsBuilder add( String param )
+    public static HasPropertyEqualTo hasPropertyEqualTo( String property, String expectedValue )
     {
-        String[] split = param.split( "=" );
-        MutablePair pair = getByKey( split[0] );
-
-        if ( pair != null && !pair.getKey().equals( "filter" ) )
-        {
-            pair.setRight( split[1] );
-            return this;
-        }
-
-        queryParams.add( MutablePair.of( split[0], split[1] ) );
-
-        return this;
+        return new HasPropertyEqualTo( property, expectedValue );
     }
 
-    public QueryParamsBuilder addAll( String... params )
+    @Override
+    public void describeTo( Description description )
     {
-        for ( String param : params )
-        {
-            this.add( param );
-        }
-
-        return this;
+        description.appendValue( String.format( "Property `%s`to equal `%s`", propertyName, expected ) );
     }
 
-    private MutablePair getByKey( String key )
+    @Override
+    protected boolean matchesSafely( Object item, Description mismatchDescription )
     {
-        return queryParams.stream()
-            .filter( p -> p.getLeft().equals( key ) )
-            .findFirst()
-            .orElse( null );
-    }
+        JsonObject object = JsonParserUtils.toJsonObject( item );
 
-    public String build()
-    {
-        if ( queryParams.size() == 0 )
+        if ( !object.has( propertyName ) )
         {
-            return "";
+            mismatchDescription.appendText( String.format( "Expected %s, but property wasn't found", expected ) );
+            return false;
         }
 
-        StringBuilder builder = new StringBuilder();
-        builder.append( "?" );
-
-        for ( int i = 0; i < queryParams.size(); i++ )
+        String value = object.get( propertyName ).getAsString();
+        if ( !value.equals( expected ) )
         {
-            builder.append( String.format( "%s=%s", queryParams.get( i ).getLeft(), queryParams.get( i ).getRight() ) );
-
-            if ( i != queryParams.size() - 1 )
-            {
-                builder.append( "&" );
-            }
+            mismatchDescription
+                .appendText( String.format( "Expected property %s to equal to %s, but found %s", propertyName, expected, value ) );
+            return false;
         }
 
-        return builder.toString();
+        return true;
     }
 }

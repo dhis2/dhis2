@@ -34,7 +34,7 @@ import org.hisp.dhis.actions.LoginActions;
 import org.hisp.dhis.actions.metadata.MetadataPaginationActions;
 import org.hisp.dhis.actions.metadata.OptionActions;
 import org.hisp.dhis.dto.ApiResponse;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -53,8 +53,10 @@ public class MetadataPaginationTest
     private MetadataPaginationActions paginationActions;
 
     private int startPage = 1;
+
     private int pageSize = 5;
-    @BeforeEach
+
+    @BeforeAll
     public void setUp()
     {
         LoginActions loginActions = new LoginActions();
@@ -82,7 +84,7 @@ public class MetadataPaginationTest
 
         response.validate().statusCode( 200 );
 
-        paginationActions.assertPagination( response, 100, 100 / pageSize, pageSize, startPage);
+        paginationActions.assertPagination( response, 100, 100 / pageSize, pageSize, startPage );
     }
 
     @Test
@@ -94,12 +96,12 @@ public class MetadataPaginationTest
         ApiResponse response = paginationActions.getPaginated(
             Arrays.asList( DEFAULT_METADATA_FILTER.split( "," ) ),
             Arrays.asList( DEFAULT_METADATA_FIELDS.split( "," ) ),
-            Collections.singletonList("id:ASC"),
+            Collections.singletonList( "id:ASC" ),
             startPage, pageSize );
 
         response.validate().statusCode( 200 );
 
-        paginationActions.assertPagination( response, 100, 100 / pageSize, pageSize, startPage);
+        paginationActions.assertPagination( response, 100, 100 / pageSize, pageSize, startPage );
     }
 
 }

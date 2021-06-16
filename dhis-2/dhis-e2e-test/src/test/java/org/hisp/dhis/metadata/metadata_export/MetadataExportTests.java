@@ -28,8 +28,7 @@
 
 package org.hisp.dhis.metadata.metadata_export;
 
-import org.hisp.dhis.ApiTest;
-import org.hisp.dhis.actions.LoginActions;
+import org.hisp.dhis.ConcurrentApiTest;
 import org.hisp.dhis.actions.UserActions;
 import org.hisp.dhis.actions.metadata.MetadataActions;
 import org.hisp.dhis.helpers.QueryParamsBuilder;
@@ -45,7 +44,7 @@ import static org.hamcrest.Matchers.not;
  * @author Gintare Vilkelyte <vilkelyte.gintare@gmail.com>
  */
 public class MetadataExportTests
-    extends ApiTest
+    extends ConcurrentApiTest
 {
     private String userWithoutAccessUsername = "MetadataExportTestsUser" + DataGenerator.randomString();
 
@@ -53,15 +52,12 @@ public class MetadataExportTests
 
     private MetadataActions metadataActions;
 
-    private LoginActions loginActions;
-
     private UserActions userActions;
 
     @BeforeAll
     public void beforeAll()
     {
         metadataActions = new MetadataActions();
-        loginActions = new LoginActions();
         userActions = new UserActions();
 
         userActions.addUser( userWithoutAccessUsername, userWithoutAccessPassword );
@@ -99,16 +95,5 @@ public class MetadataExportTests
             .statusCode( 200 )
             .body( "dataElements", not( emptyArray() ) )
             .body( "users", not( emptyArray() ) );
-    }
-
-    @Test
-    public void shouldExportAllMetadataAsSuperuser()
-    {
-        loginActions.loginAsSuperUser();
-
-        metadataActions.get().validate()
-            .statusCode( 200 )
-            .body( "relationshipTypes", not( emptyArray() ) )
-            .body( "userRoles", not( emptyArray() ) );
     }
 }

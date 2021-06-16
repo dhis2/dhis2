@@ -31,7 +31,6 @@ package org.hisp.dhis.tracker.importer.relationships;
 import com.google.gson.JsonObject;
 import org.hamcrest.Matchers;
 import org.hisp.dhis.actions.IdGenerator;
-import org.hisp.dhis.actions.RestApiActions;
 import org.hisp.dhis.actions.metadata.MetadataActions;
 import org.hisp.dhis.actions.tracker.TEIActions;
 import org.hisp.dhis.dto.ApiResponse;
@@ -39,7 +38,8 @@ import org.hisp.dhis.dto.TrackerApiResponse;
 import org.hisp.dhis.helpers.JsonObjectBuilder;
 import org.hisp.dhis.helpers.QueryParamsBuilder;
 import org.hisp.dhis.helpers.TestCleanUp;
-import org.hisp.dhis.helpers.file.FileReaderUtils;
+import org.hisp.dhis.helpers.file.JsonFileReader;
+import org.hisp.dhis.metadata.RelationshipTypeActions;
 import org.hisp.dhis.tracker.TrackerNtiApiTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -47,9 +47,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -74,7 +74,7 @@ public class RelationshipsTests
 
     private List<String> createdRelationships = new ArrayList<>();
 
-    private RestApiActions relationshipTypeActions;
+    private RelationshipTypeActions relationshipTypeActions;
 
     private TEIActions teiActions;
 
@@ -110,7 +110,7 @@ public class RelationshipsTests
     {
         teiActions = new TEIActions();
         metadataActions = new MetadataActions();
-        relationshipTypeActions = new RestApiActions( "/relationshipTypes" );
+        relationshipTypeActions = new RelationshipTypeActions();
 
         loginActions.loginAsSuperUser();
 
@@ -153,17 +153,24 @@ public class RelationshipsTests
         assertThat( trackerActions.get( "/relationships/" + relationshipId ).getBody(), matchesJSON( relationshipBody ) );
     }
 
-    @ParameterizedTest
-    @ValueSource( strings = {
-        "src/test/resources/tracker/importer/teis/teisAndRelationship.json",
-        "src/test/resources/tracker/importer/teis/teisWithRelationship.json"
-    } )
-    public void shouldImportObjectsWithRelationship( String file )
+    private Stream<Arguments> providePayloads()
         throws Exception
     {
-        JsonObject jsonObject = new FileReaderUtils().read( new File( file ) ).get( JsonObject.class );
+        return Stream.of(
+            Arguments.of( "Teis with relationships - flat", buildTeiWithRelationshipFlat() ),
+            Arguments.of( "Teis with relationships - nested",
+                new JsonFileReader( new File( "src/test/resources/tracker/importer/teis/teisWithRelationship.json" ) )
+                    .replaceStringsWithIds( "JjZ2Nwds89v", "JjZ2Nwds90v" )
+                    .get( JsonObject.class ) ) );
 
-        TrackerApiResponse response = trackerActions.postAndGetJobReport( jsonObject )
+    }
+
+    @ParameterizedTest( name = "{0}" )
+    @MethodSource( value = "providePayloads" )
+
+    public void shouldImportObjectsWithRelationship( String displayName, JsonObject payload )
+    {
+        TrackerApiResponse response = trackerActions.postAndGetJobReport( payload )
             .validateSuccessfulImport();
 
         response
@@ -273,10 +280,12 @@ public class RelationshipsTests
 
     @Test
     public void shouldDeleteRelationshipWithDeleteStrategy()
+        throws IOException
     {
-        // arrage
+        // arrange
+        JsonObject object = buildTeiWithRelationshipFlat();
         TrackerApiResponse response = trackerActions
-            .postAndGetJobReport( new File( "src/test/resources/tracker/importer/teis/teisAndRelationship.json" ) )
+            .postAndGetJobReport( object )
             .validateSuccessfulImport();
 
         List<String> teis = response.extractImportedTeis();

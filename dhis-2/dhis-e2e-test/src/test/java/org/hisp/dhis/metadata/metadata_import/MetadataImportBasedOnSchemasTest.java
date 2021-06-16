@@ -30,7 +30,7 @@ package org.hisp.dhis.metadata.metadata_import;
 
 import com.google.gson.JsonObject;
 import org.hamcrest.Matchers;
-import org.hisp.dhis.ApiTest;
+import org.hisp.dhis.ConcurrentApiTest;
 import org.hisp.dhis.actions.LoginActions;
 import org.hisp.dhis.actions.RestApiActions;
 import org.hisp.dhis.actions.SchemasActions;
@@ -54,7 +54,7 @@ import java.util.stream.Stream;
  * @author Gintare Vilkelyte <vilkelyte.gintare@gmail.com>
  */
 public class MetadataImportBasedOnSchemasTest
-    extends ApiTest
+    extends ConcurrentApiTest
 {
     private LoginActions loginActions;
 
@@ -76,7 +76,7 @@ public class MetadataImportBasedOnSchemasTest
     {
         RestApiActions apiActions = new RestApiActions( endpoint );
 
-        ApiResponse response = apiActions.get( "?fields=*" );
+        ApiResponse response = apiActions.get( "?fields=*&pageSize=1" );
 
         response.validate()
             .statusCode( 200 )
@@ -104,7 +104,7 @@ public class MetadataImportBasedOnSchemasTest
             "messageConversations",
             "users",
             "organisationUnitLevels",
-            "programRuleActions"); //blacklisted because contains conditionally required properties, which are not marked as required
+            "programRuleActions" ); //blacklisted because contains conditionally required properties, which are not marked as required
 
         List<SchemaProperty> schemaProperties = schemasActions.getRequiredProperties( schema );
 

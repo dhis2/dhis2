@@ -54,7 +54,6 @@ public class ApiResponse
 
     /**
      * Extracts uid when only one object was created.
-     *
      */
     public String extractUid()
     {
@@ -78,7 +77,6 @@ public class ApiResponse
     /**
      * Extracts uids from import summaries.
      * Use when more than one object was created.
-     *
      */
     public List<String> extractUids()
     {

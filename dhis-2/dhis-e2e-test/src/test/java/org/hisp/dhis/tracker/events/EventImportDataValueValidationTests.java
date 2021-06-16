@@ -34,34 +34,32 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.File;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import org.hamcrest.Matchers;
-import org.hisp.dhis.ApiTest;
 import org.hisp.dhis.Constants;
 import org.hisp.dhis.actions.IdGenerator;
 import org.hisp.dhis.actions.LoginActions;
 import org.hisp.dhis.actions.RestApiActions;
-import org.hisp.dhis.actions.metadata.MetadataActions;
-import org.hisp.dhis.actions.metadata.ProgramActions;
 import org.hisp.dhis.actions.tracker.EventActions;
 import org.hisp.dhis.dto.ApiResponse;
 import org.hisp.dhis.helpers.JsonObjectBuilder;
 import org.hisp.dhis.helpers.QueryParamsBuilder;
-import org.hisp.dhis.helpers.file.FileReaderUtils;
+import org.hisp.dhis.tracker.TrackerApiTest;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.not;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author Gintare Vilkelyte <vilkelyte.gintare@gmail.com>
  */
 public class EventImportDataValueValidationTests
-    extends ApiTest
+    extends TrackerApiTest
 {
     private static String OU_ID = Constants.ORG_UNIT_IDS[0];
-
-    private ProgramActions programActions;
 
     private EventActions eventActions;
 
@@ -77,7 +75,6 @@ public class EventImportDataValueValidationTests
     public void beforeAll()
         throws Exception
     {
-        programActions = new ProgramActions();
         eventActions = new EventActions();
         dataElementActions = new RestApiActions( "/dataElements" );
 
@@ -182,17 +179,11 @@ public class EventImportDataValueValidationTests
         programId = new IdGenerator().generateUniqueId();
         programStageId = new IdGenerator().generateUniqueId();
 
-        JsonObject jsonObject = new JsonObjectBuilder(
-            new FileReaderUtils()
-                .readJsonAndGenerateData( new File( "src/test/resources/tracker/eventProgram.json" ) ) )
-                    .addPropertyByJsonPath( "programStages[0].program.id", programId )
-                    .addPropertyByJsonPath( "programs[0].id", programId )
-                    .addPropertyByJsonPath( "programs[0].programStages[0].id", programStageId )
-                    .addPropertyByJsonPath( "programStages[0].id", programStageId )
-                    .addPropertyByJsonPath( "programStages[0].programStageDataElements", null )
-                    .build();
+        programId = createEventProgram();
 
-        new MetadataActions().importAndValidateMetadata( jsonObject );
+        programStageId = programActions.get( programId ).extractString( "programStages.id[0]" );
+
+        assertNotNull( programStageId );
 
         String dataElementId = dataElementActions
             .get( "?fields=id&filter=domainType:eq:TRACKER&filter=valueType:eq:TEXT&pageSize=1" )
@@ -206,14 +197,9 @@ public class EventImportDataValueValidationTests
 
     private void addDataValue( JsonObject body, String dataElementId, String value )
     {
-        JsonArray dataValues = new JsonArray();
-
-        JsonObject dataValue = new JsonObject();
-
-        dataValue.addProperty( "dataElement", dataElementId );
-        dataValue.addProperty( "value", value );
-
-        dataValues.add( dataValue );
-        body.add( "dataValues", dataValues );
+        JsonObjectBuilder.jsonObject( body )
+            .addArray( "dataValues", new JsonObjectBuilder()
+                .addProperty( "dataElement", dataElementId )
+                .addProperty( "value", value ).build());
     }
 }

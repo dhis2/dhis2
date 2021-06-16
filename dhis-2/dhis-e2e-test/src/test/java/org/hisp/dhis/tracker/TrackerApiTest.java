@@ -26,44 +26,53 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.hisp.dhis.actions.metadata;
+package org.hisp.dhis.tracker;
 
 import com.google.gson.JsonObject;
-import org.hisp.dhis.actions.RestApiActions;
-import org.hisp.dhis.helpers.JsonObjectBuilder;
-import org.hisp.dhis.utils.DataGenerator;
+import org.hisp.dhis.ApiTest;
+import org.hisp.dhis.Constants;
+import org.hisp.dhis.actions.LoginActions;
+import org.hisp.dhis.actions.metadata.ProgramActions;
+import org.hisp.dhis.actions.metadata.SharingActions;
+import org.hisp.dhis.helpers.file.JsonFileReader;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
+
+import java.io.File;
+import java.io.IOException;
 
 /**
  * @author Gintare Vilkelyte <vilkelyte.gintare@gmail.com>
  */
-public class AttributeActions
-    extends RestApiActions
+@Execution( ExecutionMode.SAME_THREAD )
+public class TrackerApiTest
+    extends ApiTest
 {
-    public AttributeActions()
+    protected ProgramActions programActions;
+
+    protected LoginActions loginActions;
+
+    @BeforeAll
+    public void beforeTracker()
     {
-        super( "/attributes" );
+        programActions = new ProgramActions();
+        loginActions = new LoginActions();
     }
 
-    public String createUniqueAttribute( String valueType, String... metadataObjects )
+    protected JsonObject buildTeiWitEnrollmentAndEvent()
+        throws IOException
     {
-        return createAttribute( valueType, true, metadataObjects );
+        return new JsonFileReader( new File( "src/test/resources/tracker/teis/teisWithEventsAndEnrollments.json" ) )
+            .replaceStringsWithIds( "Kj6vYde4LHh", "MNWZ6hnuhSw", "ZwwuwNp6gVd", "Nav6inZRw1u", "PuBvJxDB73z" )
+            .get( JsonObject.class );
     }
 
-    public String createAttribute( String valueType, boolean unique, String... metadataObjects )
+    protected String createEventProgram()
     {
-        JsonObject ob = new JsonObjectBuilder()
-            .addProperty( "name", String.format( "TA attribute %s", DataGenerator.randomString() ) )
-            .addProperty( "unique", String.valueOf( unique ) )
-            .addProperty( "valueType", valueType )
-            .addUserGroupAccess()
-            .build();
+        String programId = programActions.createEventProgram( Constants.ORG_UNIT_IDS ).getId();
+        new SharingActions().setupSharingForConfiguredUserGroup( "program", programId );
 
-        for ( String metadataObject : metadataObjects
-        )
-        {
-            ob.addProperty( metadataObject + "Attribute", "true" );
-
-        }
-        return this.create( ob );
+        return programId;
     }
 }

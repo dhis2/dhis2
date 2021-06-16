@@ -29,12 +29,12 @@
 package org.hisp.dhis.metadata.users;
 
 import com.google.gson.JsonArray;
-import org.hisp.dhis.ApiTest;
+import org.hisp.dhis.ConcurrentApiTest;
 import org.hisp.dhis.actions.LoginActions;
 import org.hisp.dhis.actions.RestApiActions;
 import org.hisp.dhis.actions.UserActions;
 import org.hisp.dhis.dto.ApiResponse;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -49,14 +49,14 @@ import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
  * @author Gintare Vilkelyte <vilkelyte.gintare@gmail.com>
  */
 public class UserLookupTests
-    extends ApiTest
+    extends ConcurrentApiTest
 {
     private RestApiActions lookupActions;
 
     private UserActions userActions;
 
-    @BeforeAll
-    public void beforeAll()
+    @BeforeEach
+    public void beforeEach()
     {
         lookupActions = new RestApiActions( "/userLookup" );
         userActions = new UserActions();

@@ -28,16 +28,13 @@
 
 package org.hisp.dhis.metadata.programs;
 
-import com.google.gson.JsonObject;
-import org.hisp.dhis.ApiTest;
+import org.hisp.dhis.ConcurrentApiTest;
+import org.hisp.dhis.Constants;
 import org.hisp.dhis.actions.LoginActions;
-import org.hisp.dhis.actions.RestApiActions;
 import org.hisp.dhis.actions.metadata.ProgramActions;
-import org.hisp.dhis.helpers.file.FileReaderUtils;
+import org.hisp.dhis.metadata.RelationshipTypeActions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.io.File;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -45,11 +42,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * @author Gintare Vilkelyte <vilkelyte.gintare@gmail.com>
  */
 public class ProgramRemovalTest
-    extends ApiTest
+    extends ConcurrentApiTest
 {
     private ProgramActions programActions;
 
-    private RestApiActions relationshipTypeActions;
+    private RelationshipTypeActions relationshipTypeActions;
 
     private String programId;
 
@@ -60,7 +57,7 @@ public class ProgramRemovalTest
         throws Exception
     {
         programActions = new ProgramActions();
-        relationshipTypeActions = new RestApiActions( "/relationshipTypes" );
+        relationshipTypeActions = new RelationshipTypeActions();
 
         new LoginActions().loginAsSuperUser();
         setupData();
@@ -77,28 +74,13 @@ public class ProgramRemovalTest
     }
 
     private void setupData()
-        throws Exception
     {
-        programId = programActions.createProgram( "WITH_REGISTRATION" ).extractUid();
+        programId = programActions.createTrackerProgram().getId();
         assertNotNull( programId, "Failed to create program" );
 
-        JsonObject relationshipType = new FileReaderUtils()
-            .read( new File( "src/test/resources/tracker/relationshipTypes.json" ) )
-            .replacePropertyValuesWithIds( "id" )
-            .get( JsonObject.class ).getAsJsonArray( "relationshipTypes" ).get( 0 )
-            .getAsJsonObject();
+        relationshipTypeId = relationshipTypeActions
+            .create( "TRACKED_ENTITY_INSTANCE", Constants.TRACKED_ENTITY_TYPE_ID, "PROGRAM_STAGE_INSTANCE", programId );
 
-        JsonObject constraint = new JsonObject();
-
-        constraint.addProperty( "relationshipEntity", "PROGRAM_STAGE_INSTANCE" );
-
-        JsonObject program = new JsonObject();
-        program.addProperty( "id", programId );
-
-        constraint.add( "program", program );
-        relationshipType.add( "toConstraint", constraint );
-
-        relationshipTypeId = relationshipTypeActions.create( relationshipType );
         assertNotNull( relationshipTypeId, "Failed to create relationshipType" );
 
     }

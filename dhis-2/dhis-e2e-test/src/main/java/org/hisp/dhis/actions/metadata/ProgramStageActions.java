@@ -40,7 +40,8 @@ import com.google.gson.JsonObject;
 /**
  * @author Gintare Vilkelyte <vilkelyte.gintare@gmail.com>
  */
-public class ProgramStageActions extends RestApiActions
+public class ProgramStageActions
+    extends RestApiActions
 {
     public ProgramStageActions()
     {

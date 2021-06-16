@@ -28,12 +28,13 @@ package org.hisp.dhis.actions;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.oneOf;
-
-import java.io.File;
-import java.util.List;
-
+import io.restassured.RestAssured;
+import io.restassured.builder.RequestSpecBuilder;
+import io.restassured.config.ObjectMapperConfig;
+import io.restassured.http.ContentType;
+import io.restassured.mapper.ObjectMapperType;
+import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
 import org.apache.commons.collections4.CollectionUtils;
 import org.hisp.dhis.TestRunStorage;
 import org.hisp.dhis.dto.ApiResponse;
@@ -41,12 +42,11 @@ import org.hisp.dhis.dto.ImportSummary;
 import org.hisp.dhis.dto.ObjectReport;
 import org.hisp.dhis.helpers.QueryParamsBuilder;
 
-import io.restassured.RestAssured;
-import io.restassured.config.ObjectMapperConfig;
-import io.restassured.http.ContentType;
-import io.restassured.mapper.ObjectMapperType;
-import io.restassured.response.Response;
-import io.restassured.specification.RequestSpecification;
+import java.io.File;
+import java.util.List;
+
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.oneOf;
 
 /**
  * @author Gintare Vilkelyte <vilkelyte.gintare@gmail.com>
@@ -72,7 +72,10 @@ public class RestApiActions
 
     protected RequestSpecification given()
     {
-        return RestAssured.given()
+        RequestSpecification requestSpecification = new RequestSpecBuilder().
+            setAuth( TestRunStorage.getAuthenticationScheme() ).build();
+
+        return RestAssured.given( requestSpecification )
             .baseUri( this.baseUri )
             .basePath( endpoint )
             .config( RestAssured.config()
@@ -133,7 +136,7 @@ public class RestApiActions
         ApiResponse response = post( object );
 
         response.validate()
-            .statusCode(  is(oneOf( 200, 201 ) ) );
+            .statusCode( is( oneOf( 200, 201 ) ) );
 
         return response.extractUid();
     }
@@ -169,7 +172,8 @@ public class RestApiActions
     {
         String path = queryParamsBuilder == null ? "" : queryParamsBuilder.build();
 
-        Response response = this.given().contentType( ContentType.TEXT ).when().get( resourceId + path );
+        Response response = this.given()
+            .contentType( ContentType.TEXT ).when().get( resourceId + path );
 
         return new ApiResponse( response );
     }
@@ -177,10 +181,10 @@ public class RestApiActions
     /**
      * Sends get request with provided path, contentType, accepting content type and queryParams appended to URL.
      *
-     * @param resourceId            Id of resource
-     * @param contentType           Content type of the request
-     * @param accept                Accepted response Content type
-     * @param queryParamsBuilder    Query params to append to url
+     * @param resourceId         Id of resource
+     * @param contentType        Content type of the request
+     * @param accept             Accepted response Content type
+     * @param queryParamsBuilder Query params to append to url
      */
     public ApiResponse get( String resourceId, String contentType, String accept, QueryParamsBuilder queryParamsBuilder )
     {
@@ -199,8 +203,8 @@ public class RestApiActions
      * Sends delete request to specified resource.
      * If delete request successful, removes entity from TestRunStorage.
      *
-     * @param resourceId            Id of resource
-     * @param queryParamsBuilder    Query params to append to url
+     * @param resourceId         Id of resource
+     * @param queryParamsBuilder Query params to append to url
      */
     public ApiResponse delete( String resourceId, QueryParamsBuilder queryParamsBuilder )
     {
@@ -247,11 +251,13 @@ public class RestApiActions
 
     /**
      * Sends PATCH request to specified resource
+     *
      * @param resourceId
      * @param object
      * @return
      */
-    public ApiResponse patch( String resourceId, Object object) {
+    public ApiResponse patch( String resourceId, Object object )
+    {
         Response response =
             this.given().body( object, ObjectMapperType.GSON )
                 .when()
@@ -324,7 +330,8 @@ public class RestApiActions
         }
     }
 
-    protected void addCreatedEntity(String ep, String id) {
+    protected void addCreatedEntity( String ep, String id )
+    {
         TestRunStorage.addCreatedEntity( ep, id );
     }
 }

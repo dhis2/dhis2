@@ -26,44 +26,16 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.hisp.dhis.actions.metadata;
+package org.hisp.dhis;
 
-import com.google.gson.JsonObject;
-import org.hisp.dhis.actions.RestApiActions;
-import org.hisp.dhis.helpers.JsonObjectBuilder;
-import org.hisp.dhis.utils.DataGenerator;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 
 /**
  * @author Gintare Vilkelyte <vilkelyte.gintare@gmail.com>
  */
-public class AttributeActions
-    extends RestApiActions
+@Execution( ExecutionMode.CONCURRENT )
+public class ConcurrentApiTest
+    extends ApiTest
 {
-    public AttributeActions()
-    {
-        super( "/attributes" );
-    }
-
-    public String createUniqueAttribute( String valueType, String... metadataObjects )
-    {
-        return createAttribute( valueType, true, metadataObjects );
-    }
-
-    public String createAttribute( String valueType, boolean unique, String... metadataObjects )
-    {
-        JsonObject ob = new JsonObjectBuilder()
-            .addProperty( "name", String.format( "TA attribute %s", DataGenerator.randomString() ) )
-            .addProperty( "unique", String.valueOf( unique ) )
-            .addProperty( "valueType", valueType )
-            .addUserGroupAccess()
-            .build();
-
-        for ( String metadataObject : metadataObjects
-        )
-        {
-            ob.addProperty( metadataObject + "Attribute", "true" );
-
-        }
-        return this.create( ob );
-    }
 }

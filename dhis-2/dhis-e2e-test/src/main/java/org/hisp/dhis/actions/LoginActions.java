@@ -28,13 +28,14 @@ package org.hisp.dhis.actions;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import static io.restassured.RestAssured.oauth2;
-import static org.hamcrest.CoreMatchers.equalTo;
-
+import io.restassured.RestAssured;
+import org.hisp.dhis.TestRunStorage;
 import org.hisp.dhis.dto.ApiResponse;
 import org.hisp.dhis.helpers.config.TestConfiguration;
 
-import io.restassured.RestAssured;
+import static io.restassured.RestAssured.oauth2;
+import static io.restassured.RestAssured.preemptive;
+import static org.hamcrest.CoreMatchers.equalTo;
 
 /**
  * @author Gintare Vilkelyte <vilkelyte.gintare@gmail.com>
@@ -50,13 +51,16 @@ public class LoginActions
      */
     public void loginAsUser( final String username, final String password )
     {
-        ApiResponse loggedInUser = getLoggedInUserInfo();
-
-        if ( loggedInUser.getContentType().contains( "json" ) &&
-            loggedInUser.extract( "userCredentials.username" ) != null &&
-            loggedInUser.extract( "userCredentials.username" ).equals( username ) )
+        if ( TestRunStorage.getAuthenticationScheme() != null )
         {
-            return;
+            ApiResponse loggedInUser = getLoggedInUserInfo();
+
+            if ( loggedInUser.getContentType().contains( "json" ) &&
+                loggedInUser.extract( "userCredentials.username" ) != null &&
+                loggedInUser.extract( "userCredentials.username" ).equals( username ) )
+            {
+                return;
+            }
         }
 
         addAuthenticationHeader( username, password );
@@ -100,7 +104,7 @@ public class LoginActions
      */
     public void addAuthenticationHeader( final String username, final String password )
     {
-        RestAssured.authentication = RestAssured.preemptive().basic( username, password );
+        TestRunStorage.setAuthenticationScheme( preemptive().basic( username, password ) );
     }
 
     /**
@@ -108,16 +112,17 @@ public class LoginActions
      */
     public void removeAuthenticationHeader()
     {
-        RestAssured.authentication = RestAssured.DEFAULT_AUTH;
+        TestRunStorage.setAuthenticationScheme( RestAssured.DEFAULT_AUTH );
     }
 
     /**
      * Logs in with oAuth2 token
+     *
      * @param token
      */
     public void loginWithToken( String token )
     {
-        RestAssured.authentication = oauth2( token );
+        TestRunStorage.setAuthenticationScheme( oauth2( token ) );
     }
 
     public void loginAsAdmin()
