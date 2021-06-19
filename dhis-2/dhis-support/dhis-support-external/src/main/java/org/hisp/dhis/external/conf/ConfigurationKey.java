@@ -149,7 +149,16 @@ public enum ConfigurationKey
     AUDIT_ENABLED( "system.audit.enabled", Constants.TRUE, false ),
     TRACKER_IMPORT_PREHEAT_CACHE_ENABLED( "tracker.import.preheat.cache.enabled", Constants.ON, false ),
     ENABLE_OAUTH2_AUTHORIZATION_SERVER( "oauth2.authorization.server.enabled", Constants.ON, false ),
-    ENABLE_JWT_OIDC_TOKEN_AUTHENTICATION( "oidc.jwt.token.authentication.enabled", Constants.OFF, false );
+    ENABLE_JWT_OIDC_TOKEN_AUTHENTICATION( "oidc.jwt.token.authentication.enabled", Constants.OFF, false ),
+    CSP_NONCE_ENABLED( "csp.nonce.enabled", Constants.ON, true ),
+    CSP_UPGRADE_INSECURE_ENABLED( "csp.upgrade.insecure.enabled", Constants.OFF, true ),
+    CSP_HEADER_VALUE( "csp.header.value", "prefetch-src 'self'; "
+        + "script-src 'self' 'nonce-{nonce}' 'unsafe-inline'; "
+        + "connect-src 'self' *.fastly.net; img-src 'self' data: *.fastly.net; "
+        + "style-src 'self' 'nonce-{nonce}' 'unsafe-inline' fonts.googleapis.com cdnjs.cloudflare.com; "
+        + "font-src 'self'; base-uri 'self'; form-action 'self' {form-allowed-external-hosts}; worker-src 'self'; "
+        + "object-src 'none'; frame-ancestors 'none'; child-src 'none'; {upgrade-insecure}",
+        false );
 
     private final String key;
 

@@ -124,6 +124,9 @@ public class DhisWebApiWebSecurityConfig
     public class OAuth2SecurityConfig extends WebSecurityConfigurerAdapter implements AuthorizationServerConfigurer
     {
         @Autowired
+        private DhisConfigurationProvider dhisConfig;
+
+        @Autowired
         private TwoFactorAuthenticationProvider twoFactorAuthenticationProvider;
 
         @Autowired
@@ -166,7 +169,7 @@ public class DhisWebApiWebSecurityConfig
 
             http.apply( new AuthorizationServerAuthenticationManagerConfigurer() );
 
-            setHttpHeaders( http );
+            setHttpHeaders( http, dhisConfig );
         }
 
         private class AuthorizationServerAuthenticationManagerConfigurer
@@ -255,6 +258,9 @@ public class DhisWebApiWebSecurityConfig
     public static class OidcSecurityConfig extends WebSecurityConfigurerAdapter
     {
         @Autowired
+        private DhisConfigurationProvider dhisConfig;
+
+        @Autowired
         private DhisOidcProviderRepository dhisOidcProviderRepository;
 
         @Autowired
@@ -293,7 +299,7 @@ public class DhisWebApiWebSecurityConfig
 
                 .csrf().disable();
 
-            setHttpHeaders( http );
+            setHttpHeaders( http, dhisConfig );
         }
     }
 
@@ -414,7 +420,7 @@ public class DhisWebApiWebSecurityConfig
 
             configureOAuth2TokenFilter( http );
 
-            setHttpHeaders( http );
+            setHttpHeaders( http, dhisConfig );
         }
 
         private void configureOAuth2TokenFilter( HttpSecurity http )
@@ -480,11 +486,12 @@ public class DhisWebApiWebSecurityConfig
     /**
      * Customizes various "global" security related headers.
      *
-     * @param http http config
+     * @param http http security config builder
+     * @param dhisConfig DHIS2 configuration provider
      *
      * @throws Exception
      */
-    public static void setHttpHeaders( HttpSecurity http )
+    public static void setHttpHeaders( HttpSecurity http, DhisConfigurationProvider dhisConfig )
         throws Exception
     {
         http
@@ -496,6 +503,7 @@ public class DhisWebApiWebSecurityConfig
             .and()
             .httpStrictTransportSecurity()
             .and()
-            .frameOptions().sameOrigin();
+            .frameOptions().sameOrigin()
+            .contentSecurityPolicy( dhisConfig.getProperty( ConfigurationKey.CSP_HEADER_VALUE ) );
     }
 }
