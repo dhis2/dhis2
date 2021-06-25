@@ -28,6 +28,9 @@
 package org.hisp.dhis.analytics.event.data;
 
 import static org.apache.commons.lang.time.DateUtils.addYears;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.trimToEmpty;
+import static org.apache.commons.lang3.StringUtils.wrap;
 import static org.hisp.dhis.analytics.event.EventAnalyticsService.ITEM_LATITUDE;
 import static org.hisp.dhis.analytics.event.EventAnalyticsService.ITEM_LONGITUDE;
 import static org.hisp.dhis.analytics.table.JdbcEventAnalyticsTableManager.OU_GEOMETRY_COL_SUFFIX;
@@ -40,7 +43,6 @@ import static org.hisp.dhis.common.DimensionalObject.ORGUNIT_DIM_ID;
 import static org.hisp.dhis.common.DimensionalObject.PERIOD_DIM_ID;
 import static org.hisp.dhis.common.IdentifiableObjectUtils.getUids;
 import static org.hisp.dhis.commons.util.TextUtils.getQuotedCommaDelimitedString;
-import static org.hisp.dhis.commons.util.TextUtils.removeLastOr;
 import static org.hisp.dhis.feedback.ErrorCode.E7131;
 import static org.hisp.dhis.feedback.ErrorCode.E7132;
 import static org.hisp.dhis.feedback.ErrorCode.E7133;
@@ -48,7 +50,9 @@ import static org.hisp.dhis.util.DateUtils.getMediumDateString;
 import static org.postgresql.util.PSQLState.DIVISION_BY_ZERO;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
@@ -438,20 +442,8 @@ public class JdbcEventAnalyticsManager
         }
         else // Descendants
         {
-            String orgUnitAlias = getOrgUnitAlias( params );
-
-            sql += hlp.whereAnd() + " (";
-
-            for ( DimensionalItemObject object : params.getDimensionOrFilterItems( ORGUNIT_DIM_ID ) )
-            {
-                OrganisationUnit unit = (OrganisationUnit) object;
-
-                String orgUnitCol = quote( orgUnitAlias, "uidlevel" + unit.getLevel() );
-
-                sql += orgUnitCol + " = '" + unit.getUid() + "' or ";
-            }
-
-            sql = removeLastOr( sql ) + ") ";
+            sql += descendantsOrgUnitStatement( getOrgUnitAlias( params ),
+                params.getDimensionOrFilterItems( ORGUNIT_DIM_ID ), hlp );
         }
 
         // ---------------------------------------------------------------------
@@ -460,8 +452,6 @@ public class JdbcEventAnalyticsManager
 
         List<DimensionalObject> dynamicDimensions = params.getDimensionsAndFilters(
             Sets.newHashSet( DimensionType.ORGANISATION_UNIT_GROUP_SET, DimensionType.CATEGORY ) );
-
-        // Apply pre-authorized dimensions filtering
 
         for ( DimensionalObject dim : dynamicDimensions )
         {
@@ -598,6 +588,43 @@ public class JdbcEventAnalyticsManager
         }
 
         return sql;
+    }
+
+    /**
+     * Creates a SQL statement of descendants org units. When there are multiple
+     * levels the "or" operator will be used as junction. The final result will
+     * be a query in the format: "where/and (ax."uidlevel0" in ('orgUid-1',
+     * 'orgUid-2', 'orgUid-2') )"
+     *
+     * @param orgUnitAlias
+     * @param dimensionalItems
+     * @param helper
+     * @return the SQL statement
+     */
+    private String descendantsOrgUnitStatement( final String orgUnitAlias,
+        final List<DimensionalItemObject> dimensionalItems, final SqlHelper helper )
+    {
+        final StringBuilder statement = new StringBuilder();
+        final Map<String, String> orgUnitColsAndUnitUids = new HashMap<>();
+
+        statement.append( helper.whereAnd() ).append( " (" );
+
+        for ( final DimensionalItemObject itemObject : dimensionalItems )
+        {
+            final OrganisationUnit unit = (OrganisationUnit) itemObject;
+            final String orgUnitCol = quote( orgUnitAlias, "uidlevel" + unit.getLevel() );
+            final String orgUnitValue = isBlank( orgUnitColsAndUnitUids.get( orgUnitCol ) )
+                ? wrap( unit.getUid(), "'" )
+                : trimToEmpty( orgUnitColsAndUnitUids.get( orgUnitCol ) ) + ", " + wrap( unit.getUid(), "'" );
+
+            orgUnitColsAndUnitUids.put( orgUnitCol, orgUnitValue );
+        }
+
+        statement.append( orgUnitColsAndUnitUids.entrySet().stream()
+            .map( entry -> (entry.getKey()).concat( OPEN_IN ).concat( entry.getValue() ).concat( ")" ) )
+            .collect( Collectors.joining( " or " ) ) ).toString();
+
+        return statement.append( " ) " ).toString();
     }
 
     /**
