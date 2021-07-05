@@ -27,28 +27,22 @@
  */
 package org.hisp.dhis.user.sharing;
 
-import java.io.Serializable;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import org.hisp.dhis.common.DxfNamespaces;
 import org.hisp.dhis.user.UserGroup;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
 /**
  * @author Morten Olav Hansen <mortenoh@gmail.com>
  */
 @Data
 @AllArgsConstructor
-@NoArgsConstructor
-@JacksonXmlRootElement( localName = "userGroupAccess", namespace = DxfNamespaces.DXF_2_0 )
 public class UserGroupAccess
-    implements Serializable
+    implements AccessObject
 {
     @JsonProperty
     @JacksonXmlProperty( namespace = DxfNamespaces.DXF_2_0 )
@@ -57,6 +51,10 @@ public class UserGroupAccess
     @JsonProperty
     @JacksonXmlProperty( namespace = DxfNamespaces.DXF_2_0 )
     private String id;
+
+    public UserGroupAccess()
+    {
+    }
 
     public UserGroupAccess( UserGroup userGroup, String access )
     {
