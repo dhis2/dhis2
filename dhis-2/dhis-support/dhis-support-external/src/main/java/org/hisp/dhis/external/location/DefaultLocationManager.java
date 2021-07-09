@@ -38,7 +38,11 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import javax.annotation.PostConstruct;
+
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -57,22 +61,26 @@ public class DefaultLocationManager extends LogOnceLogger
     private static final String DEFAULT_ENV_VAR = "DHIS2_HOME";
 
     private static final String DEFAULT_SYS_PROP = "dhis2.home";
-
+    private static final String DEFAULT_CTX_VAR = "dhis2-home";
+    
     private String externalDir;
 
     private String environmentVariable;
 
     private String systemProperty;
+    
+    private String contextVariable;
 
-    public DefaultLocationManager( String environmentVariable, String systemProperty )
+    public DefaultLocationManager( String environmentVariable, String systemProperty, String contextVariable )
     {
         this.environmentVariable = environmentVariable;
         this.systemProperty = systemProperty;
+        this.contextVariable = contextVariable;
     }
 
     public static DefaultLocationManager getDefault()
     {
-        return new DefaultLocationManager( DEFAULT_ENV_VAR, DEFAULT_SYS_PROP );
+        return new DefaultLocationManager( DEFAULT_ENV_VAR, DEFAULT_SYS_PROP, DEFAULT_CTX_VAR );
     }
 
     // -------------------------------------------------------------------------
@@ -82,6 +90,10 @@ public class DefaultLocationManager extends LogOnceLogger
     @PostConstruct
     public void init()
     {
+        
+        
+        
+        
         String path = System.getProperty( systemProperty );
 
         if ( path != null )
@@ -96,12 +108,19 @@ public class DefaultLocationManager extends LogOnceLogger
         else
         {
             log( log, Level.INFO, "System property " + systemProperty + " not set" );
+            try 
+            {
+                Context initCtx = new InitialContext();
+                Context envCtx = ( Context ) initCtx.lookup( "java:comp/env" );
+                path = ( String ) envCtx.lookup( this.contextVariable );
+            }
+            catch ( NamingException e ) 
+            {
 
-            path = System.getenv( environmentVariable );
-
+            }
             if ( path != null )
             {
-                log( log, Level.INFO, "Environment variable " + environmentVariable + " points to " + path );
+                log( log, Level.INFO, "Context variable " + contextVariable + " points to " + path );
 
                 if ( directoryIsValid( new File( path ) ) )
                 {
@@ -110,15 +129,31 @@ public class DefaultLocationManager extends LogOnceLogger
             }
             else
             {
-                log( log, Level.INFO, "Environment variable " + environmentVariable + " not set" );
+                log( log, Level.INFO, "Context variable " + contextVariable + " not set" );
 
-                path = DEFAULT_DHIS2_HOME;
+                path = System.getenv( environmentVariable );
 
-                if ( directoryIsValid( new File( path ) ) )
+                if ( path != null )
                 {
-                    externalDir = path;
-                    log( log, Level.INFO, "Home directory set to " + DEFAULT_DHIS2_HOME );
+                    log( log, Level.INFO, "Environment variable " + environmentVariable + " points to " + path );
 
+                    if ( directoryIsValid( new File( path ) ) )
+                    {
+                        externalDir = path;
+                    }
+                }
+                else
+                {
+                    log( log, Level.INFO, "Environment variable " + environmentVariable + " not set" );
+
+                    path = DEFAULT_DHIS2_HOME;
+
+                    if ( directoryIsValid( new File( path ) ) )
+                    {
+                        externalDir = path;
+                        log( log, Level.INFO, "Home directory set to " + DEFAULT_DHIS2_HOME );
+
+                    }
                 }
             }
         }
