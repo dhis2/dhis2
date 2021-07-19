@@ -27,25 +27,32 @@
  */
 package org.hisp.dhis.webapi.controller;
 
-import static org.junit.Assert.assertEquals;
+import static org.hisp.dhis.webapi.utils.WebClientUtils.assertStatus;
 
 import org.hisp.dhis.webapi.DhisControllerConvenienceTest;
-import org.hisp.dhis.webapi.json.JsonObject;
 import org.junit.Test;
 import org.springframework.http.HttpStatus;
-import org.springframework.mock.web.MockMultipartFile;
 
-public class FileResourceControllerTest extends DhisControllerConvenienceTest
+/**
+ * Tests the {@link org.hisp.dhis.webapi.controller.mapping.MapController} using
+ * (mocked) REST requests.
+ *
+ * @author Jan Bernitt
+ */
+public class MapControllerTest extends DhisControllerConvenienceTest
 {
     @Test
-    public void testSaveOrgUnitImage()
+    public void testPutJsonObject()
     {
-        MockMultipartFile image = new MockMultipartFile( "file", "OU_profile_image.png", "image/png",
-            "<<png data>>".getBytes() );
+        String mapId = assertStatus( HttpStatus.CREATED, POST( "/maps/", "{'name':'My map'}" ) );
 
-        HttpResponse response = POST_MULTIPART( "/fileResources?domain=ORG_UNIT", image );
-        JsonObject savedObject = response.content( HttpStatus.ACCEPTED ).getObject( "response" )
-            .getObject( "fileResource" );
-        assertEquals( "OU_profile_image.png", savedObject.getString( "name" ).string() );
+        assertStatus( HttpStatus.NO_CONTENT, PUT( "/maps/" + mapId, "{'name':'My updated map'}" ) );
+    }
+
+    @Test
+    public void testPutJsonObject_NotFound()
+    {
+        assertWebMessage( "Not Found", 404, "ERROR", "Map does not exist: xyz",
+            PUT( "/maps/xyz", "{'name':'My updated map'}" ).content( HttpStatus.NOT_FOUND ) );
     }
 }

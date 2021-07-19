@@ -27,47 +27,44 @@
  */
 package org.hisp.dhis.webapi.controller;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import static org.hisp.dhis.webapi.utils.WebClientUtils.assertStatus;
 
-import org.hisp.dhis.dxf2.webmessage.WebMessage;
-import org.hisp.dhis.legend.LegendSet;
-import org.hisp.dhis.schema.descriptors.LegendSetSchemaDescriptor;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.hisp.dhis.webapi.DhisControllerConvenienceTest;
+import org.junit.Test;
+import org.springframework.http.HttpStatus;
 
 /**
- * @author Morten Olav Hansen <mortenoh@gmail.com>
+ * Tests the {@link MessageConversationController} using (mocked) REST requests.
+ *
+ * @author Jan Bernitt
  */
-@Controller
-@RequestMapping( value = LegendSetSchemaDescriptor.API_ENDPOINT )
-public class LegendSetController
-    extends AbstractCrudController<LegendSet>
+public class MessageConversationControllerTest extends DhisControllerConvenienceTest
 {
-    @Override
-    @PreAuthorize( "hasRole('F_LEGEND_SET_PUBLIC_ADD') or hasRole('F_LEGEND_SET_PRIVATE_ADD') or hasRole('ALL')" )
-    public WebMessage postJsonObject( HttpServletRequest request, HttpServletResponse response )
-        throws Exception
+    @Test
+    public void testPostJsonObject()
     {
-        return super.postJsonObject( request, response );
+        assertWebMessage( "Created", 201, "OK", "Message conversation created",
+            POST( "/messageConversations/",
+                "{'subject':'Subject','text':'Text','users':[{'id':'" + getSuperuserUid() + "'}]}" )
+                    .content( HttpStatus.CREATED ) );
     }
 
-    @Override
-    @PreAuthorize( "hasRole('F_LEGEND_SET_PUBLIC_ADD') or hasRole('F_LEGEND_SET_PRIVATE_ADD')  or hasRole('ALL')" )
-    public WebMessage putJsonObject( @PathVariable String uid, HttpServletRequest request,
-        HttpServletResponse response )
-        throws Exception
+    @Test
+    public void testPostJsonObject_MissingProperty()
     {
-        return super.putJsonObject( uid, request, response );
+        assertWebMessage( "Conflict", 409, "ERROR", "No recipients selected.",
+            POST( "/messageConversations/",
+                "{'subject':'Subject','text':'Text','users':[]}" )
+                    .content( HttpStatus.CONFLICT ) );
     }
 
-    @Override
-    @PreAuthorize( "hasRole('F_LEGEND_SET_DELETE') or hasRole('ALL')" )
-    public WebMessage deleteObject( @PathVariable String uid, HttpServletRequest request, HttpServletResponse response )
-        throws Exception
+    @Test
+    public void testDeleteObject()
     {
-        return super.deleteObject( uid, request, response );
+        String uid = assertStatus( HttpStatus.CREATED, POST( "/messageConversations/",
+            "{'subject':'Subject','text':'Text','users':[{'id':'" + getSuperuserUid() + "'}]}" ) );
+
+        assertWebMessage( "OK", 200, "OK", null,
+            DELETE( "/messageConversations/" + uid ).content( HttpStatus.OK ) );
     }
 }

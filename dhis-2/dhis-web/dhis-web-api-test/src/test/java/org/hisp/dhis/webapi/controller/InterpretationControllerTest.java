@@ -27,25 +27,61 @@
  */
 package org.hisp.dhis.webapi.controller;
 
-import static org.junit.Assert.assertEquals;
+import static org.hisp.dhis.webapi.utils.WebClientUtils.assertStatus;
 
+import org.hisp.dhis.common.IdentifiableObjectManager;
+import org.hisp.dhis.interpretation.Interpretation;
+import org.hisp.dhis.interpretation.InterpretationService;
+import org.hisp.dhis.organisationunit.OrganisationUnit;
+import org.hisp.dhis.visualization.Visualization;
+import org.hisp.dhis.visualization.VisualizationService;
 import org.hisp.dhis.webapi.DhisControllerConvenienceTest;
-import org.hisp.dhis.webapi.json.JsonObject;
+import org.junit.Before;
 import org.junit.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.mock.web.MockMultipartFile;
 
-public class FileResourceControllerTest extends DhisControllerConvenienceTest
+/**
+ * Tests the {@link InterpretationController} using (mocked) REST requests.
+ *
+ * @author Jan Bernitt
+ */
+public class InterpretationControllerTest extends DhisControllerConvenienceTest
 {
-    @Test
-    public void testSaveOrgUnitImage()
-    {
-        MockMultipartFile image = new MockMultipartFile( "file", "OU_profile_image.png", "image/png",
-            "<<png data>>".getBytes() );
+    @Autowired
+    private VisualizationService visualizationService;
 
-        HttpResponse response = POST_MULTIPART( "/fileResources?domain=ORG_UNIT", image );
-        JsonObject savedObject = response.content( HttpStatus.ACCEPTED ).getObject( "response" )
-            .getObject( "fileResource" );
-        assertEquals( "OU_profile_image.png", savedObject.getString( "name" ).string() );
+    @Autowired
+    private InterpretationService interpretationService;
+
+    @Autowired
+    private IdentifiableObjectManager manager;
+
+    private String uid;
+
+    @Before
+    public void setUp()
+    {
+        OrganisationUnit ouA = createOrganisationUnit( 'A' );
+        manager.save( ouA );
+        Visualization vzA = createVisualization( 'A' );
+        visualizationService.save( vzA );
+        Interpretation ipA = new Interpretation( vzA, ouA, "Interpration of visualization A" );
+        interpretationService.saveInterpretation( ipA );
+        uid = ipA.getUid();
     }
+
+    @Test
+    public void testDeleteObject()
+    {
+        assertStatus( HttpStatus.NO_CONTENT, DELETE( "/interpretations/" + uid ) );
+    }
+
+    @Test
+    public void testDeleteObject_NotFound()
+    {
+        assertWebMessage( "Not Found", 404, "ERROR", "Interpretation does not exist: xyz",
+            DELETE( "/interpretations/xyz" ).content( HttpStatus.NOT_FOUND ) );
+    }
+
 }
